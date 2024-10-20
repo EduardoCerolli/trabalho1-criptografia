@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <openssl/aes.h>
 
 
 unsigned char caixaS[256] = {
@@ -72,25 +73,25 @@ void multiplicaColunas (unsigned char bloco[4][4]) {
 
     for (int i = 0; i < 4; i++)
     {
-        matriz_aux[i][0] = 2 * bloco[0][i];
-        matriz_aux[i][0] += 3 * bloco[1][i];
-        matriz_aux[i][0] += 1 * bloco[2][i];
-        matriz_aux[i][0] += 1 * bloco[3][i];
+        matriz_aux[0][i]  = 2 * bloco[0][i];
+        matriz_aux[0][i] += 3 * bloco[1][i];
+        matriz_aux[0][i] += 1 * bloco[2][i];
+        matriz_aux[0][i] += 1 * bloco[3][i];
 
-        matriz_aux[i][1] = 1 * bloco[0][i];
-        matriz_aux[i][1] += 2 * bloco[1][i];
-        matriz_aux[i][1] += 3 * bloco[2][i];
-        matriz_aux[i][1] += 1 * bloco[3][i];
+        matriz_aux[1][i]  = 1 * bloco[0][i];
+        matriz_aux[1][i] += 2 * bloco[1][i];
+        matriz_aux[1][i] += 3 * bloco[2][i];
+        matriz_aux[1][i] += 1 * bloco[3][i];
 
-        matriz_aux[i][2] = 1 * bloco[0][i];
-        matriz_aux[i][2] += 1 * bloco[1][i];
-        matriz_aux[i][2] += 2 * bloco[2][i];
-        matriz_aux[i][2] += 3 * bloco[3][i];
+        matriz_aux[2][i]  = 1 * bloco[0][i];
+        matriz_aux[2][i] += 1 * bloco[1][i];
+        matriz_aux[2][i] += 2 * bloco[2][i];
+        matriz_aux[2][i] += 3 * bloco[3][i];
 
-        matriz_aux[i][3] = 3 * bloco[0][i];
-        matriz_aux[i][3] += 1 * bloco[1][i];
-        matriz_aux[i][3] += 1 * bloco[2][i];
-        matriz_aux[i][3] += 2 * bloco[3][i];
+        matriz_aux[3][i]  = 3 * bloco[0][i];
+        matriz_aux[3][i] += 1 * bloco[1][i];
+        matriz_aux[3][i] += 1 * bloco[2][i];
+        matriz_aux[3][i] += 2 * bloco[3][i];
     }
 
     for (int i = 0; i < 4; i++)
@@ -114,9 +115,6 @@ void funcaoG (unsigned char palavra[4], unsigned char p0, unsigned char p1, unsi
 
     palavra[0] = palavra[0] ^ rcon[rodada];
 
-    printf("%x %x %x %X\n", p0,p1,p2,p3);
-    printf("%x %x %x %X\n", palavra[0],palavra[1],palavra[2],palavra[3]);
-    printf("\n");
     return;
 }
 
@@ -178,13 +176,29 @@ int main () {
     unsigned char dados[4][4], chave[4][4];
     unsigned char chaveExpandida[4][40];
 
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++)
-        {
-            dados[i][j] = j;
-            chave[i][j] = i;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++) {
+            dados[i][j] = 65;
+            chave[i][j] = 66;
         }
-    }
+    }  
+
+    // for (int i = 0; i < 4; i++)
+    // {
+    //     for (int j = 0; j < 4; j++)
+    //         printf("%c ", dados[i][j]);        
+    //     printf("\n");
+    // }
+
+    // printf("\n");
+    // for (int i = 0; i < 4; i++)
+    // {
+    //     for (int j = 0; j < 4; j++)
+    //         printf("%c ", chave[i][j]);        
+    //     printf("\n");
+    // }    
+
 
     // Adiciona primeira
     for (int i = 0; i < 4; i++) {
@@ -194,23 +208,28 @@ int main () {
         dados[i][3] = dados[i][3] ^ chave[i][3];
     }
 
-
     expandeChave(chave, chaveExpandida);
 
-    for (int i = 0; i < 1; i++) {
+    // for (int i = 0; i < 4; i++)
+    // {
+    //     for (int j = 0; j < 8; j++)
+    //         printf("%02x ", chaveExpandida[i][j]);        
+    //     printf("\n");
+    // }
+
+    for (int i = 0; i < 10; i++) {
         substituiBytes(dados);
         rotacionaLinhas(dados);
         multiplicaColunas(dados);
         adicionaChave(dados, chaveExpandida, i * 4);
     }
-
     
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     for (int j = 0; j < 4; j++)
-    //         printf("%x ", dados[i][j]);        
-    //     printf("\n");
-    // }   
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+            printf("%02x ", dados[i][j]);        
+        printf("\n");
+    }
     
     return 0;
 }
