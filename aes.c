@@ -184,6 +184,7 @@ int main () {
         }
     }
 
+    // se le em coluna
     unsigned char dados [4][4] = {
         {'P', 'A', 'A', 'R'},
         {'O', 'D', 'L', 'A'},
