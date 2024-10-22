@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <openssl/aes.h>
 
 
 unsigned char caixaS[256] = {
@@ -27,167 +26,197 @@ unsigned char caixaSInv[256] =
 
 unsigned char rcon[10] = {1, 2, 4, 8, 16, 32, 64, 128, 27, 54};
 
-// Função para expandir a chave AES
-void expandeChave(unsigned char chave[4][4], unsigned char chaveExpandida[4][44]) {
-    unsigned char temp[4];
-    int i = 0;
 
-    // Copia a chave original
-    for (i = 0; i < 4; i++) {
-        chaveExpandida[i][0] = chave[i][0];
-        chaveExpandida[i][1] = chave[i][1];
-        chaveExpandida[i][2] = chave[i][2];
-        chaveExpandida[i][3] = chave[i][3];
-    }
-
-    // Expansão da chave
-    for (i = 4; i < 44; i++) {
-        for (int j = 0; j < 4; j++) {
-            temp[j] = chaveExpandida[j][i - 1];
-        }
-
-        if (i % 4 == 0) {
-            unsigned char t = temp[0];
-            temp[0] = caixaS[temp[1]] ^ rcon[i/4 - 1];
-            temp[1] = caixaS[temp[2]];
-            temp[2] = caixaS[temp[3]];
-            temp[3] = caixaS[t];
-        }
-
-        for (int j = 0; j < 4; j++) {
-            chaveExpandida[j][i] = chaveExpandida[j][i - 4] ^ temp[j];
-        }
-    }
-}
-
-// Função para adicionar a chave de rodada
-void adicionaChave(unsigned char bloco[4][4], unsigned char chaveExpandida[4][44], int rodada) {
+// XOR entre o bloco atual e chave de rodada
+void adicionaChave (unsigned char bloco[4][4], unsigned char chave[4][40], int rodada) {
     for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            bloco[i][j] ^= chaveExpandida[i][j + rodada * 4];
-        }
+        bloco[i][0] = bloco[i][0] ^ chave[i][rodada + 0];
+        bloco[i][1] = bloco[i][1] ^ chave[i][rodada + 1];
+        bloco[i][2] = bloco[i][2] ^ chave[i][rodada + 2];
+        bloco[i][3] = bloco[i][3] ^ chave[i][rodada + 3];
     }
+
+    return;
 }
 
-// Função para substituir bytes usando a S-box
 void substituiBytes(unsigned char bloco[4][4]) {
     for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            bloco[i][j] = caixaS[bloco[i][j]];
-        }
+        bloco[i][0] = caixaS[bloco[i][0]];
+        bloco[i][1] = caixaS[bloco[i][1]];
+        bloco[i][2] = caixaS[bloco[i][2]];
+        bloco[i][3] = caixaS[bloco[i][3]];
     }
 }
 
-// Função para rotacionar linhas do bloco
-void rotacionaLinhas(unsigned char bloco[4][4]) {
-    unsigned char temp;
-    // Linha 1 - Rotaciona 1 byte para a esquerda
-    temp = bloco[1][0];
-    bloco[1][0] = bloco[1][1];
-    bloco[1][1] = bloco[1][2];
-    bloco[1][2] = bloco[1][3];
-    bloco[1][3] = temp;
+void rotacionaLinhas (unsigned char bloco[4][4]) {
+    unsigned char aux1, aux2, aux3, aux4;
+    
+    for (int i = 1; i < 4; i++)
+    {
+        aux1 = bloco[i][(0 + i) % 4];
+        aux2 = bloco[i][(1 + i) % 4];
+        aux3 = bloco[i][(2 + i) % 4];
+        aux4 = bloco[i][(3 + i) % 4];
 
-    // Linha 2 - Rotaciona 2 bytes para a esquerda
-    temp = bloco[2][0];
-    bloco[2][0] = bloco[2][2];
-    bloco[2][2] = temp;
-    temp = bloco[2][1];
-    bloco[2][1] = bloco[2][3];
-    bloco[2][3] = temp;
-
-    // Linha 3 - Rotaciona 3 bytes para a esquerda (equivalente a 1 byte para a direita)
-    temp = bloco[3][3];
-    bloco[3][3] = bloco[3][2];
-    bloco[3][2] = bloco[3][1];
-    bloco[3][1] = bloco[3][0];
-    bloco[3][0] = temp;
-}
-
-unsigned char galois_multiplica_2(unsigned char valor) {
-    // Multiplica por 2 no campo GF(2^8)
-    return (valor << 1) ^ ((valor & 0x80) ? 0x1B : 0x00);
-}
-
-unsigned char galois_multiplica_3(unsigned char valor) {
-    // Multiplica por 3 no campo GF(2^8)
-    return galois_multiplica_2(valor) ^ valor;
+        bloco[i][0] = aux1;
+        bloco[i][1] = aux2;
+        bloco[i][2] = aux3;
+        bloco[i][3] = aux4;
+    }
+    
+    return;
 }
 
 void multiplicaColunas(unsigned char bloco[4][4]) {
     unsigned char matriz_aux[4][4];
-
+     
     for (int i = 0; i < 4; i++) {
-        matriz_aux[0][i]  = galois_multiplica_2(bloco[0][i]);
-        matriz_aux[0][i] ^= galois_multiplica_3(bloco[1][i]);
+
+        matriz_aux[0][i]  = (bloco[0][i] << 1) ^ (bloco[0][i] >> 7 ) * 0x1B;
+        matriz_aux[0][i] ^= ((bloco[1][i] << 1) ^ (bloco[1][i] >> 7 ) * 0x1B) ^ (bloco[1][i]);
         matriz_aux[0][i] ^= bloco[2][i];
         matriz_aux[0][i] ^= bloco[3][i];
 
         matriz_aux[1][i]  = bloco[0][i];
-        matriz_aux[1][i] ^= galois_multiplica_2(bloco[1][i]);
-        matriz_aux[1][i] ^= galois_multiplica_3(bloco[2][i]);
+        matriz_aux[1][i] ^= (bloco[1][i] << 1) ^ (bloco[1][i] >> 7 ) * 0x1B;
+        matriz_aux[1][i] ^= ((bloco[2][i] << 1) ^ (bloco[2][i] >> 7 ) * 0x1B) ^ (bloco[2][i]);
         matriz_aux[1][i] ^= bloco[3][i];
 
         matriz_aux[2][i]  = bloco[0][i];
         matriz_aux[2][i] ^= bloco[1][i];
-        matriz_aux[2][i] ^= galois_multiplica_2(bloco[2][i]);
-        matriz_aux[2][i] ^= galois_multiplica_3(bloco[3][i]);
+        matriz_aux[2][i] ^= (bloco[2][i] << 1) ^ (bloco[2][i] >> 7 ) * 0x1B;
+        matriz_aux[2][i] ^= ((bloco[3][i] << 1) ^ (bloco[3][i] >> 7 ) * 0x1B) ^ (bloco[3][i]);
 
-        matriz_aux[3][i]  = galois_multiplica_3(bloco[0][i]);
+        matriz_aux[3][i]  = ((bloco[0][i] << 1) ^ (bloco[0][i] >> 7 ) * 0x1B) ^ (bloco[0][i]);
         matriz_aux[3][i] ^= bloco[1][i];
         matriz_aux[3][i] ^= bloco[2][i];
-        matriz_aux[3][i] ^= galois_multiplica_2(bloco[3][i]);
+        matriz_aux[3][i] ^= (bloco[3][i] << 1) ^ (bloco[3][i] >> 7 ) * 0x1B;
     }
 
     // Copia os resultados de volta para o bloco original
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
             bloco[i][j] = matriz_aux[i][j];
+
+    return;
 }
 
-// Função principal AES (implementação simplificada)
-void aes(unsigned char bloco[4][4], unsigned char chave[4][4]) {
-    unsigned char chaveExpandida[4][44];
+
+void funcaoG (unsigned char palavra[4], unsigned char p0, unsigned char p1, unsigned char p2, unsigned char p3, int rodada) {
+    palavra[0] = p1;
+    palavra[1] = p2;
+    palavra[2] = p3;
+    palavra[3] = p0;
+
+    palavra[0] = caixaS[palavra[0]];
+    palavra[1] = caixaS[palavra[1]];
+    palavra[2] = caixaS[palavra[2]];
+    palavra[3] = caixaS[palavra[3]];
+
+    palavra[0] = palavra[0] ^ rcon[rodada];
+
+    return;
+}
+
+void expandeChave (unsigned char chave[4][4], unsigned char chaveExpandida[4][40]) {
+    unsigned char aux[4];
+    int rodada = 0;
+    
+    funcaoG(aux, chave[0][3], chave[1][3], chave[2][3], chave[3][3], 0);
+    chaveExpandida[0][0] = aux[0] ^ chave[0][0];
+    chaveExpandida[1][0] = aux[1] ^ chave[1][0];
+    chaveExpandida[2][0] = aux[2] ^ chave[2][0];
+    chaveExpandida[3][0] = aux[3] ^ chave[3][0];
+
+    chaveExpandida[0][1] = chaveExpandida[0][0] ^ chave[0][1];
+    chaveExpandida[1][1] = chaveExpandida[1][0] ^ chave[1][1];
+    chaveExpandida[2][1] = chaveExpandida[2][0] ^ chave[2][1];
+    chaveExpandida[3][1] = chaveExpandida[3][0] ^ chave[3][1];
+
+    chaveExpandida[0][2] = chaveExpandida[0][1] ^ chave[0][2];
+    chaveExpandida[1][2] = chaveExpandida[1][1] ^ chave[1][2];
+    chaveExpandida[2][2] = chaveExpandida[2][1] ^ chave[2][2];
+    chaveExpandida[3][2] = chaveExpandida[3][1] ^ chave[3][2];
+
+    chaveExpandida[0][3] = chaveExpandida[0][2] ^ chave[0][3];
+    chaveExpandida[1][3] = chaveExpandida[1][2] ^ chave[1][3];
+    chaveExpandida[2][3] = chaveExpandida[2][2] ^ chave[2][3];
+    chaveExpandida[3][3] = chaveExpandida[3][2] ^ chave[3][3];
+    
+    for (int i = 4; i < 40; i+= 4)
+    {
+        rodada++;
+        funcaoG(aux, chaveExpandida[0][i - 1], chaveExpandida[1][i - 1], chaveExpandida[2][i - 1], chaveExpandida[3][i - 1], rodada);
+        chaveExpandida[0][i] = aux[0] ^ chaveExpandida[0][i - 4];
+        chaveExpandida[1][i] = aux[1] ^ chaveExpandida[1][i - 4];
+        chaveExpandida[2][i] = aux[2] ^ chaveExpandida[2][i - 4];
+        chaveExpandida[3][i] = aux[3] ^ chaveExpandida[3][i - 4];
+
+        chaveExpandida[0][i + 1] = chaveExpandida[0][i + 1 - 1] ^ chaveExpandida[0][i + 1 - 4];
+        chaveExpandida[1][i + 1] = chaveExpandida[1][i + 1 - 1] ^ chaveExpandida[1][i + 1 - 4];
+        chaveExpandida[2][i + 1] = chaveExpandida[2][i + 1 - 1] ^ chaveExpandida[2][i + 1 - 4];
+        chaveExpandida[3][i + 1] = chaveExpandida[3][i + 1 - 1] ^ chaveExpandida[3][i + 1 - 4];
+
+        chaveExpandida[0][i + 2] = chaveExpandida[0][i + 2 - 1] ^ chaveExpandida[0][i + 2 - 4];
+        chaveExpandida[1][i + 2] = chaveExpandida[1][i + 2 - 1] ^ chaveExpandida[1][i + 2 - 4];
+        chaveExpandida[2][i + 2] = chaveExpandida[2][i + 2 - 1] ^ chaveExpandida[2][i + 2 - 4];
+        chaveExpandida[3][i + 2] = chaveExpandida[3][i + 2 - 1] ^ chaveExpandida[3][i + 2 - 4];
+
+        chaveExpandida[0][i + 3] = chaveExpandida[0][i + 3 - 1] ^ chaveExpandida[0][i + 3 - 4];
+        chaveExpandida[1][i + 3] = chaveExpandida[1][i + 3 - 1] ^ chaveExpandida[1][i + 3 - 4];
+        chaveExpandida[2][i + 3] = chaveExpandida[2][i + 3 - 1] ^ chaveExpandida[2][i + 3 - 4];
+        chaveExpandida[3][i + 3] = chaveExpandida[3][i + 3 - 1] ^ chaveExpandida[3][i + 3 - 4];
+    }
+    
+
+    return;
+}
+
+int main () {
+    unsigned char chave[4][4];
+    unsigned char chaveExpandida[4][40];
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++) {
+            // dados[i][j] = 'A';
+            chave[i][j] = 'B';
+        }
+    }
+
+    unsigned char dados [4][4] = {
+        {'P', 'A', 'A', 'R'},
+        {'O', 'D', 'L', 'A'},
+        {'R', 'A', 'A', 'X'},
+        {'R', 'P', 'V', 'D'}
+    };
+ 
+    // Adiciona primeira
+    for (int i = 0; i < 4; i++) {
+        dados[i][0] = dados[i][0] ^ chave[i][0];
+        dados[i][1] = dados[i][1] ^ chave[i][1];
+        dados[i][2] = dados[i][2] ^ chave[i][2];
+        dados[i][3] = dados[i][3] ^ chave[i][3];
+    }
+
     expandeChave(chave, chaveExpandida);
 
-    adicionaChave(bloco, chaveExpandida, 0);
-
-    for (int i = 1; i < 10; i++) {
-        substituiBytes(bloco);
-        rotacionaLinhas(bloco);
-        multiplicaColunas(bloco); 
-        adicionaChave(bloco, chaveExpandida, i);
+    for (int i = 0; i < 9; i++) {
+        substituiBytes(dados);
+        rotacionaLinhas(dados);
+        multiplicaColunas(dados);
+        adicionaChave(dados, chaveExpandida, i * 4);
     }
-
-    substituiBytes(bloco);
-    rotacionaLinhas(bloco);
-    adicionaChave(bloco, chaveExpandida, 10);
-}
-
-int main() {
-    unsigned char bloco[4][4] = {
-        {65, 65, 65, 65},
-        {65, 65, 65, 65},
-        {65, 65, 65, 65},
-        {65, 65, 65, 65}
-    };
-
-    unsigned char chave[4][4] = {
-        {66, 66, 66, 66},
-        {66, 66, 66, 66},
-        {66, 66, 66, 66},
-        {66, 66, 66, 66}
-    };
-
-    aes(bloco, chave);
-
-    printf("Bloco criptografado:\n");
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            printf("%02x ", bloco[i][j]);
-        }
-        printf("\n");
+    substituiBytes(dados);
+    rotacionaLinhas(dados);
+    adicionaChave(dados, chaveExpandida, 9 * 4);
+    
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+            printf("%02x", dados[j][i]);        
     }
-
+    printf("\n");
+    
     return 0;
 }
