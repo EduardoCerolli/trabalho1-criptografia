@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -O3
-ARQS = aes.c 
 
 all:
-	$(CC) $(CFLAGS) -o aes $(ARQS)
+	$(CC) $(CFLAGS) -o aes aes.c 
+	$(CC) $(CFLAGS) -o decifra decifra.c
