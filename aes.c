@@ -26,6 +26,9 @@ unsigned char caixaSInv[256] =
 
 unsigned char rcon[10] = {1, 2, 4, 8, 16, 32, 64, 128, 27, 54};
 
+unsigned char chave[4][4];
+unsigned char chaveExpandida[4][40];
+
 
 // XOR entre o bloco atual e chave de rodada
 void adicionaChave (unsigned char bloco[4][4], unsigned char chave[4][40], int rodada) {
@@ -118,7 +121,7 @@ void funcaoG (unsigned char palavra[4], unsigned char p0, unsigned char p1, unsi
     return;
 }
 
-void expandeChave (unsigned char chave[4][4], unsigned char chaveExpandida[4][40]) {
+void expandeChave () {
     unsigned char aux[4];
     int rodada = 0;
     
@@ -172,52 +175,123 @@ void expandeChave (unsigned char chave[4][4], unsigned char chaveExpandida[4][40
     return;
 }
 
-int main () {
-    unsigned char chave[4][4];
-    unsigned char chaveExpandida[4][40];
+void cifraBloco (unsigned char bloco [4][4]) {
 
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++) {
-            // dados[i][j] = 'A';
-            chave[i][j] = 'B';
+    // Adiciona primeira
+    for (int i = 0; i < 4; i++) {
+        bloco[i][0] = bloco[i][0] ^ chave[i][0];
+        bloco[i][1] = bloco[i][1] ^ chave[i][1];
+        bloco[i][2] = bloco[i][2] ^ chave[i][2];
+        bloco[i][3] = bloco[i][3] ^ chave[i][3];
+    }
+
+    for (int i = 0; i < 9; i++) {
+        substituiBytes(bloco);
+        rotacionaLinhas(bloco);
+        multiplicaColunas(bloco);
+        adicionaChave(bloco, chaveExpandida, i * 4);
+    }
+    substituiBytes(bloco);
+    rotacionaLinhas(bloco);
+    adicionaChave(bloco, chaveExpandida, 9 * 4);
+    
+    return;
+}
+
+void preencheChave(char *senha) {
+    unsigned char aux[17];
+
+    if (senha == NULL) {
+        printf("Digite a senha.\n");
+        int res = scanf ("%16s", aux);
+        if (res == 0) {
+            perror ("Erro ao ler chave") ;
+            exit (1) ;
+        }
+    }
+    else {
+        FILE *arq;
+        arq = fopen(senha, "r");
+        if (!arq) {
+            perror ("Erro ao abrir arquivo") ;
+            exit (1) ;
+        }
+        int tam = fread(aux, 1, 16, arq);
+        if (tam != 16) {
+            perror ("Erro ao ler chave") ;
+            exit (1) ;
+        }
+
+        fclose (arq);
+    }
+
+    int k = 0;
+    for (int i = 0; i < 4; i++) {
+        chave[0][i] = aux[k++];
+        chave[1][i] = aux[k++];
+        chave[2][i] = aux[k++];
+        chave[3][i] = aux[k++];
+    }
+
+    expandeChave();
+}
+
+int leBloco (unsigned char bloco [4][4], FILE *arq) {
+    unsigned char aux[17];
+    
+    int tam = fread (aux, 1, 16, arq) ;    
+    if (tam < 1)
+        return 0;
+    
+    for (int i = tam; i < 16; i++)
+        aux[i] = 'X';
+
+    int k = 0;
+    for (int i = 0; i < 4; i++) {
+        bloco[0][i] = aux[k++];
+        bloco[1][i] = aux[k++];
+        bloco[2][i] = aux[k++];
+        bloco[3][i] = aux[k++];
+    }
+
+    return 1;
+}
+
+int main (int argc, char *argv[]) {
+    char *dados, *senha = NULL;
+
+    if (argc < 2) {
+        printf("Informe o arquivo de dados.\n");
+        return 1;
+    }
+    else if (argc > 2) {
+        senha = argv[2];
+    }
+    
+    dados = argv[1];
+
+    preencheChave(senha);
+
+    FILE *arq;
+    arq = fopen(dados, "r");
+    if (!arq) {
+        perror ("Erro ao abrir arquivo") ;
+        exit (1) ;
+    }
+
+    unsigned char bloco [4][4];
+    while (!feof (arq)) {
+        if (leBloco(bloco, arq)) {
+            cifraBloco(bloco);
+            
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                    printf("%c", bloco[j][i]);        
+            }
         }
     }
 
-    // se le em coluna
-    unsigned char dados [4][4] = {
-        {'P', 'A', 'A', 'R'},
-        {'O', 'D', 'L', 'A'},
-        {'R', 'A', 'A', 'X'},
-        {'R', 'P', 'V', 'D'}
-    };
- 
-    // Adiciona primeira
-    for (int i = 0; i < 4; i++) {
-        dados[i][0] = dados[i][0] ^ chave[i][0];
-        dados[i][1] = dados[i][1] ^ chave[i][1];
-        dados[i][2] = dados[i][2] ^ chave[i][2];
-        dados[i][3] = dados[i][3] ^ chave[i][3];
-    }
-
-    expandeChave(chave, chaveExpandida);
-
-    for (int i = 0; i < 9; i++) {
-        substituiBytes(dados);
-        rotacionaLinhas(dados);
-        multiplicaColunas(dados);
-        adicionaChave(dados, chaveExpandida, i * 4);
-    }
-    substituiBytes(dados);
-    rotacionaLinhas(dados);
-    adicionaChave(dados, chaveExpandida, 9 * 4);
-    
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++)
-            printf("%02x", dados[j][i]);        
-    }
-    printf("\n");
-    
+    fclose (arq);
     return 0;
 }
