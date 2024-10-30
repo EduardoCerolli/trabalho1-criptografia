@@ -36,12 +36,11 @@ void substituiBytes(unsigned char bloco[4][4]) {
 void rotacionaLinhas (unsigned char bloco[4][4]) {
     unsigned char aux1, aux2, aux3, aux4;
     
-    for (int i = 1; i < 4; i++)
-    {
-        aux1 = bloco[i][(0 + i) % 4];
-        aux2 = bloco[i][(1 + i) % 4];
-        aux3 = bloco[i][(2 + i) % 4];
-        aux4 = bloco[i][(3 + i) % 4];
+    for (int i = 1; i < 4; i++) {
+        aux1 = bloco[i][(4 - i) % 4];
+        aux2 = bloco[i][(5 - i) % 4];
+        aux3 = bloco[i][(6 - i) % 4];
+        aux4 = bloco[i][(7 - i) % 4];
 
         bloco[i][0] = aux1;
         bloco[i][1] = aux2;
@@ -52,30 +51,30 @@ void rotacionaLinhas (unsigned char bloco[4][4]) {
     return;
 }
 
+unsigned char gfMultiplica(unsigned char dado, unsigned char constante) {
+    unsigned char produto = 0;
+    while (constante) {
+        if (constante & 1) {
+            produto ^= dado;
+        }
+        dado = (dado << 1) ^ ((dado & 0x80) ? 0x1B : 0x00);
+        constante >>= 1;
+    }
+    return produto;
+}
+
 void multiplicaColunas(unsigned char bloco[4][4]) {
     unsigned char matriz_aux[4][4];
-     
+
     for (int i = 0; i < 4; i++) {
-
-        matriz_aux[0][i]  = (bloco[0][i] << 1) ^ (bloco[0][i] >> 7 ) * 0x1B;
-        matriz_aux[0][i] ^= ((bloco[1][i] << 1) ^ (bloco[1][i] >> 7 ) * 0x1B) ^ (bloco[1][i]);
-        matriz_aux[0][i] ^= bloco[2][i];
-        matriz_aux[0][i] ^= bloco[3][i];
-
-        matriz_aux[1][i]  = bloco[0][i];
-        matriz_aux[1][i] ^= (bloco[1][i] << 1) ^ (bloco[1][i] >> 7 ) * 0x1B;
-        matriz_aux[1][i] ^= ((bloco[2][i] << 1) ^ (bloco[2][i] >> 7 ) * 0x1B) ^ (bloco[2][i]);
-        matriz_aux[1][i] ^= bloco[3][i];
-
-        matriz_aux[2][i]  = bloco[0][i];
-        matriz_aux[2][i] ^= bloco[1][i];
-        matriz_aux[2][i] ^= (bloco[2][i] << 1) ^ (bloco[2][i] >> 7 ) * 0x1B;
-        matriz_aux[2][i] ^= ((bloco[3][i] << 1) ^ (bloco[3][i] >> 7 ) * 0x1B) ^ (bloco[3][i]);
-
-        matriz_aux[3][i]  = ((bloco[0][i] << 1) ^ (bloco[0][i] >> 7 ) * 0x1B) ^ (bloco[0][i]);
-        matriz_aux[3][i] ^= bloco[1][i];
-        matriz_aux[3][i] ^= bloco[2][i];
-        matriz_aux[3][i] ^= (bloco[3][i] << 1) ^ (bloco[3][i] >> 7 ) * 0x1B;
+        matriz_aux[0][i] = gfMultiplica(bloco[0][i], 0x0E) ^ gfMultiplica(bloco[1][i], 0x0B) ^ 
+                           gfMultiplica(bloco[2][i], 0x0D) ^ gfMultiplica(bloco[3][i], 0x09);
+        matriz_aux[1][i] = gfMultiplica(bloco[0][i], 0x09) ^ gfMultiplica(bloco[1][i], 0x0E) ^ 
+                           gfMultiplica(bloco[2][i], 0x0B) ^ gfMultiplica(bloco[3][i], 0x0D);
+        matriz_aux[2][i] = gfMultiplica(bloco[0][i], 0x0D) ^ gfMultiplica(bloco[1][i], 0x09) ^ 
+                           gfMultiplica(bloco[2][i], 0x0E) ^ gfMultiplica(bloco[3][i], 0x0B);
+        matriz_aux[3][i] = gfMultiplica(bloco[0][i], 0x0B) ^ gfMultiplica(bloco[1][i], 0x0D) ^ 
+                           gfMultiplica(bloco[2][i], 0x09) ^ gfMultiplica(bloco[3][i], 0x0E);
     }
 
     // Copia os resultados de volta para o bloco original
@@ -85,7 +84,6 @@ void multiplicaColunas(unsigned char bloco[4][4]) {
 
     return;
 }
-
 
 void funcaoG (unsigned char palavra[4], unsigned char p0, unsigned char p1, unsigned char p2, unsigned char p3, int rodada) {
     palavra[0] = p1;
@@ -162,13 +160,14 @@ void decifraBloco (unsigned char bloco [4][4]) {
     adicionaChave(bloco, chaveExpandida, 9 * 4);
 
     for (int i = 8; i >= 0; i--) {
-        substituiBytes(bloco);
         rotacionaLinhas(bloco);
-        multiplicaColunas(bloco);
+        substituiBytes(bloco);
         adicionaChave(bloco, chaveExpandida, i * 4);
+        multiplicaColunas(bloco);
     }
-    substituiBytes(bloco);
+    
     rotacionaLinhas(bloco);
+    substituiBytes(bloco);
     for (int i = 0; i < 4; i++) {
         bloco[i][0] = bloco[i][0] ^ chave[i][0];
         bloco[i][1] = bloco[i][1] ^ chave[i][1];
