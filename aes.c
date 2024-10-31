@@ -23,80 +23,83 @@ unsigned char caixaS[256] = {
 
 unsigned char rcon[10] = {1, 2, 4, 8, 16, 32, 64, 128, 27, 54};
 
-unsigned char chave[4][4];
-unsigned char chaveExpandida[4][40];
+unsigned char chave[16];
+unsigned char chaveExpandida[160];
 
 
 // XOR entre o bloco atual e chave de rodada
-void adicionaChave (unsigned char bloco[4][4], unsigned char chave[4][40], int rodada) {
+void adicionaChave (unsigned char bloco[16], unsigned char chave[160], int rodada) {
     for (int i = 0; i < 4; i++) {
-        bloco[i][0] = bloco[i][0] ^ chave[i][rodada + 0];
-        bloco[i][1] = bloco[i][1] ^ chave[i][rodada + 1];
-        bloco[i][2] = bloco[i][2] ^ chave[i][rodada + 2];
-        bloco[i][3] = bloco[i][3] ^ chave[i][rodada + 3];
+        bloco[(i * 4) + 0] = bloco[(i * 4) + 0] ^ chave[(i * 4) + rodada + 0];
+        bloco[(i * 4) + 1] = bloco[(i * 4) + 1] ^ chave[(i * 4) + rodada + 1];
+        bloco[(i * 4) + 2] = bloco[(i * 4) + 2] ^ chave[(i * 4) + rodada + 2];
+        bloco[(i * 4) + 3] = bloco[(i * 4) + 3] ^ chave[(i * 4) + rodada + 3];
     }
 
     return;
 }
 
-void substituiBytes(unsigned char bloco[4][4]) {
+void substituiBytes(unsigned char bloco[16]) {
     for (int i = 0; i < 4; i++) {
-        bloco[i][0] = caixaS[bloco[i][0]];
-        bloco[i][1] = caixaS[bloco[i][1]];
-        bloco[i][2] = caixaS[bloco[i][2]];
-        bloco[i][3] = caixaS[bloco[i][3]];
+        bloco[(i * 4) + 0] = caixaS[bloco[(i * 4) + 0]];
+        bloco[(i * 4) + 1] = caixaS[bloco[(i * 4) + 1]];
+        bloco[(i * 4) + 2] = caixaS[bloco[(i * 4) + 2]];
+        bloco[(i * 4) + 3] = caixaS[bloco[(i * 4) + 3]];
     }
 }
 
-void rotacionaLinhas (unsigned char bloco[4][4]) {
+void rotacionaLinhas (unsigned char bloco[16]) {
     unsigned char aux1, aux2, aux3, aux4;
     
     for (int i = 1; i < 4; i++)
     {
-        aux1 = bloco[i][(0 + i) % 4];
-        aux2 = bloco[i][(1 + i) % 4];
-        aux3 = bloco[i][(2 + i) % 4];
-        aux4 = bloco[i][(3 + i) % 4];
+        aux1 = bloco[(i * 4) + ((0 + i) % 4)];
+        aux2 = bloco[(i * 4) + ((1 + i) % 4)];
+        aux3 = bloco[(i * 4) + ((2 + i) % 4)];
+        aux4 = bloco[(i * 4) + ((3 + i) % 4)];
 
-        bloco[i][0] = aux1;
-        bloco[i][1] = aux2;
-        bloco[i][2] = aux3;
-        bloco[i][3] = aux4;
+        bloco[(i * 4) + 0] = aux1;
+        bloco[(i * 4) + 1] = aux2;
+        bloco[(i * 4) + 2] = aux3;
+        bloco[(i * 4) + 3] = aux4;
     }
     
     return;
 }
 
-void multiplicaColunas(unsigned char bloco[4][4]) {
-    unsigned char matriz_aux[4][4];
+void multiplicaColunas(unsigned char bloco[16]) {
+    unsigned char matriz_aux[16];
      
     for (int i = 0; i < 4; i++) {
 
-        matriz_aux[0][i]  = (bloco[0][i] << 1) ^ (bloco[0][i] >> 7 ) * 0x1B;
-        matriz_aux[0][i] ^= ((bloco[1][i] << 1) ^ (bloco[1][i] >> 7 ) * 0x1B) ^ (bloco[1][i]);
-        matriz_aux[0][i] ^= bloco[2][i];
-        matriz_aux[0][i] ^= bloco[3][i];
+        matriz_aux[i]  = (bloco[i] << 1) ^ (bloco[i] >> 7 ) * 0x1B;
+        matriz_aux[i] ^= ((bloco[4 + i] << 1) ^ (bloco[4 + i] >> 7 ) * 0x1B) ^ (bloco[4 + i]);
+        matriz_aux[i] ^= bloco[8 + i];
+        matriz_aux[i] ^= bloco[12 + i];
 
-        matriz_aux[1][i]  = bloco[0][i];
-        matriz_aux[1][i] ^= (bloco[1][i] << 1) ^ (bloco[1][i] >> 7 ) * 0x1B;
-        matriz_aux[1][i] ^= ((bloco[2][i] << 1) ^ (bloco[2][i] >> 7 ) * 0x1B) ^ (bloco[2][i]);
-        matriz_aux[1][i] ^= bloco[3][i];
+        matriz_aux[4 + i]  = bloco[i];
+        matriz_aux[4 + i] ^= (bloco[4 + i] << 1) ^ (bloco[4 + i] >> 7 ) * 0x1B;
+        matriz_aux[4 + i] ^= ((bloco[8 + i] << 1) ^ (bloco[8 + i] >> 7 ) * 0x1B) ^ (bloco[8 + i]);
+        matriz_aux[4 + i] ^= bloco[12 + i];
 
-        matriz_aux[2][i]  = bloco[0][i];
-        matriz_aux[2][i] ^= bloco[1][i];
-        matriz_aux[2][i] ^= (bloco[2][i] << 1) ^ (bloco[2][i] >> 7 ) * 0x1B;
-        matriz_aux[2][i] ^= ((bloco[3][i] << 1) ^ (bloco[3][i] >> 7 ) * 0x1B) ^ (bloco[3][i]);
+        matriz_aux[8 + i]  = bloco[i];
+        matriz_aux[8 + i] ^= bloco[4 + i];
+        matriz_aux[8 + i] ^= (bloco[8 + i] << 1) ^ (bloco[8 + i] >> 7 ) * 0x1B;
+        matriz_aux[8 + i] ^= ((bloco[12 + i] << 1) ^ (bloco[12 + i] >> 7 ) * 0x1B) ^ (bloco[12 + i]);
 
-        matriz_aux[3][i]  = ((bloco[0][i] << 1) ^ (bloco[0][i] >> 7 ) * 0x1B) ^ (bloco[0][i]);
-        matriz_aux[3][i] ^= bloco[1][i];
-        matriz_aux[3][i] ^= bloco[2][i];
-        matriz_aux[3][i] ^= (bloco[3][i] << 1) ^ (bloco[3][i] >> 7 ) * 0x1B;
+        matriz_aux[12 + i]  = ((bloco[i] << 1) ^ (bloco[i] >> 7 ) * 0x1B) ^ (bloco[i]);
+        matriz_aux[12 + i] ^= bloco[4 + i];
+        matriz_aux[12 + i] ^= bloco[8 + i];
+        matriz_aux[12 + i] ^= (bloco[12 + i] << 1) ^ (bloco[12 + i] >> 7 ) * 0x1B;
     }
 
     // Copia os resultados de volta para o bloco original
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            bloco[i][j] = matriz_aux[i][j];
+    for (int i = 0; i < 4; i++) {
+        bloco[(i * 4) + 0] = matriz_aux[(i * 4) + 0];
+        bloco[(i * 4) + 1] = matriz_aux[(i * 4) + 1];
+        bloco[(i * 4) + 2] = matriz_aux[(i * 4) + 2];
+        bloco[(i * 4) + 3] = matriz_aux[(i * 4) + 3];
+    }
 
     return;
 }
@@ -122,64 +125,63 @@ void expandeChave () {
     unsigned char aux[4];
     int rodada = 0;
     
-    funcaoG(aux, chave[0][3], chave[1][3], chave[2][3], chave[3][3], 0);
-    chaveExpandida[0][0] = aux[0] ^ chave[0][0];
-    chaveExpandida[1][0] = aux[1] ^ chave[1][0];
-    chaveExpandida[2][0] = aux[2] ^ chave[2][0];
-    chaveExpandida[3][0] = aux[3] ^ chave[3][0];
+    funcaoG(aux, chave[3], chave[4 + 3], chave[8 + 3], chave[12 + 3], 0);
+    chaveExpandida[0] = aux[0] ^ chave[0];
+    chaveExpandida[4] = aux[1] ^ chave[4];
+    chaveExpandida[8] = aux[2] ^ chave[8];
+    chaveExpandida[12] = aux[3] ^ chave[12];
 
-    chaveExpandida[0][1] = chaveExpandida[0][0] ^ chave[0][1];
-    chaveExpandida[1][1] = chaveExpandida[1][0] ^ chave[1][1];
-    chaveExpandida[2][1] = chaveExpandida[2][0] ^ chave[2][1];
-    chaveExpandida[3][1] = chaveExpandida[3][0] ^ chave[3][1];
+    chaveExpandida[1] = chaveExpandida[0] ^ chave[1];
+    chaveExpandida[4 + 1] = chaveExpandida[4] ^ chave[4 + 1];
+    chaveExpandida[8 + 1] = chaveExpandida[8] ^ chave[8 + 1];
+    chaveExpandida[12 + 1] = chaveExpandida[12] ^ chave[12 + 1];
 
-    chaveExpandida[0][2] = chaveExpandida[0][1] ^ chave[0][2];
-    chaveExpandida[1][2] = chaveExpandida[1][1] ^ chave[1][2];
-    chaveExpandida[2][2] = chaveExpandida[2][1] ^ chave[2][2];
-    chaveExpandida[3][2] = chaveExpandida[3][1] ^ chave[3][2];
+    chaveExpandida[2] = chaveExpandida[1] ^ chave[2];
+    chaveExpandida[4 + 2] = chaveExpandida[4 + 1] ^ chave[4 + 2];
+    chaveExpandida[8 + 2] = chaveExpandida[8 + 1] ^ chave[8 + 2];
+    chaveExpandida[12 + 2] = chaveExpandida[12 + 1] ^ chave[12 + 2];
 
-    chaveExpandida[0][3] = chaveExpandida[0][2] ^ chave[0][3];
-    chaveExpandida[1][3] = chaveExpandida[1][2] ^ chave[1][3];
-    chaveExpandida[2][3] = chaveExpandida[2][2] ^ chave[2][3];
-    chaveExpandida[3][3] = chaveExpandida[3][2] ^ chave[3][3];
+    chaveExpandida[3] = chaveExpandida[2] ^ chave[3];
+    chaveExpandida[4 + 3] = chaveExpandida[4 + 2] ^ chave[4 + 3];
+    chaveExpandida[8 + 3] = chaveExpandida[8 + 2] ^ chave[8 + 3];
+    chaveExpandida[12 + 3] = chaveExpandida[12 + 2] ^ chave[12 + 3];
     
     for (int i = 4; i < 40; i+= 4)
     {
         rodada++;
-        funcaoG(aux, chaveExpandida[0][i - 1], chaveExpandida[1][i - 1], chaveExpandida[2][i - 1], chaveExpandida[3][i - 1], rodada);
-        chaveExpandida[0][i] = aux[0] ^ chaveExpandida[0][i - 4];
-        chaveExpandida[1][i] = aux[1] ^ chaveExpandida[1][i - 4];
-        chaveExpandida[2][i] = aux[2] ^ chaveExpandida[2][i - 4];
-        chaveExpandida[3][i] = aux[3] ^ chaveExpandida[3][i - 4];
+        funcaoG(aux, chaveExpandida[i - 1], chaveExpandida[4 + i - 1], chaveExpandida[8 +  i - 1], chaveExpandida[12 + i - 1], rodada);
+        chaveExpandida[i] = aux[0] ^ chaveExpandida[i - 4];
+        chaveExpandida[4 + i] = aux[1] ^ chaveExpandida[4 + i - 4];
+        chaveExpandida[8 +  i] = aux[2] ^ chaveExpandida[8 +  i - 4];
+        chaveExpandida[12 + i] = aux[3] ^ chaveExpandida[12 + i - 4];
 
-        chaveExpandida[0][i + 1] = chaveExpandida[0][i + 1 - 1] ^ chaveExpandida[0][i + 1 - 4];
-        chaveExpandida[1][i + 1] = chaveExpandida[1][i + 1 - 1] ^ chaveExpandida[1][i + 1 - 4];
-        chaveExpandida[2][i + 1] = chaveExpandida[2][i + 1 - 1] ^ chaveExpandida[2][i + 1 - 4];
-        chaveExpandida[3][i + 1] = chaveExpandida[3][i + 1 - 1] ^ chaveExpandida[3][i + 1 - 4];
+        chaveExpandida[i + 1] = chaveExpandida[i + 1 - 1] ^ chaveExpandida[i + 1 - 4];
+        chaveExpandida[4 + i + 1] = chaveExpandida[4 + i + 1 - 1] ^ chaveExpandida[4 + i + 1 - 4];
+        chaveExpandida[8 +  i + 1] = chaveExpandida[8 +  i + 1 - 1] ^ chaveExpandida[8 +  i + 1 - 4];
+        chaveExpandida[12 + i + 1] = chaveExpandida[12 + i + 1 - 1] ^ chaveExpandida[12 + i + 1 - 4];
 
-        chaveExpandida[0][i + 2] = chaveExpandida[0][i + 2 - 1] ^ chaveExpandida[0][i + 2 - 4];
-        chaveExpandida[1][i + 2] = chaveExpandida[1][i + 2 - 1] ^ chaveExpandida[1][i + 2 - 4];
-        chaveExpandida[2][i + 2] = chaveExpandida[2][i + 2 - 1] ^ chaveExpandida[2][i + 2 - 4];
-        chaveExpandida[3][i + 2] = chaveExpandida[3][i + 2 - 1] ^ chaveExpandida[3][i + 2 - 4];
+        chaveExpandida[i + 2] = chaveExpandida[i + 2 - 1] ^ chaveExpandida[i + 2 - 4];
+        chaveExpandida[4 + i + 2] = chaveExpandida[4 + i + 2 - 1] ^ chaveExpandida[4 + i + 2 - 4];
+        chaveExpandida[8 +  i + 2] = chaveExpandida[8 +  i + 2 - 1] ^ chaveExpandida[8 +  i + 2 - 4];
+        chaveExpandida[12 + i + 2] = chaveExpandida[12 + i + 2 - 1] ^ chaveExpandida[12 + i + 2 - 4];
 
-        chaveExpandida[0][i + 3] = chaveExpandida[0][i + 3 - 1] ^ chaveExpandida[0][i + 3 - 4];
-        chaveExpandida[1][i + 3] = chaveExpandida[1][i + 3 - 1] ^ chaveExpandida[1][i + 3 - 4];
-        chaveExpandida[2][i + 3] = chaveExpandida[2][i + 3 - 1] ^ chaveExpandida[2][i + 3 - 4];
-        chaveExpandida[3][i + 3] = chaveExpandida[3][i + 3 - 1] ^ chaveExpandida[3][i + 3 - 4];
+        chaveExpandida[i + 3] = chaveExpandida[i + 3 - 1] ^ chaveExpandida[i + 3 - 4];
+        chaveExpandida[4 + i + 3] = chaveExpandida[4 + i + 3 - 1] ^ chaveExpandida[4 + i + 3 - 4];
+        chaveExpandida[8 +  i + 3] = chaveExpandida[8 +  i + 3 - 1] ^ chaveExpandida[8 +  i + 3 - 4];
+        chaveExpandida[12 + i + 3] = chaveExpandida[12 + i + 3 - 1] ^ chaveExpandida[12 + i + 3 - 4];
     }
     
 
     return;
 }
 
-void cifraBloco (unsigned char bloco [4][4]) {
+void cifraBloco (unsigned char bloco [16]) {
 
-    // Adiciona primeira
     for (int i = 0; i < 4; i++) {
-        bloco[i][0] = bloco[i][0] ^ chave[i][0];
-        bloco[i][1] = bloco[i][1] ^ chave[i][1];
-        bloco[i][2] = bloco[i][2] ^ chave[i][2];
-        bloco[i][3] = bloco[i][3] ^ chave[i][3];
+        bloco[(i * 4) + 0] = bloco[(i * 4) + 0] ^ chave[(i * 4) + 0];
+        bloco[(i * 4) + 1] = bloco[(i * 4) + 1] ^ chave[(i * 4) + 1];
+        bloco[(i * 4) + 2] = bloco[(i * 4) + 2] ^ chave[(i * 4) + 2];
+        bloco[(i * 4) + 3] = bloco[(i * 4) + 3] ^ chave[(i * 4) + 3];
     }
 
     for (int i = 0; i < 9; i++) {
@@ -224,16 +226,16 @@ void preencheChave(char *senha) {
 
     int k = 0;
     for (int i = 0; i < 4; i++) {
-        chave[0][i] = aux[k++];
-        chave[1][i] = aux[k++];
-        chave[2][i] = aux[k++];
-        chave[3][i] = aux[k++];
+        chave[i] = aux[k++];
+        chave[4 + i] = aux[k++];
+        chave[8 + i] = aux[k++];
+        chave[12 + i] = aux[k++];
     }
 
     expandeChave();
 }
 
-int leBloco (unsigned char bloco [4][4], FILE *arq) {
+int leBloco (unsigned char bloco [16], FILE *arq) {
     unsigned char aux[17];
     
     int tam = fread (aux, 1, 16, arq) ;    
@@ -245,10 +247,10 @@ int leBloco (unsigned char bloco [4][4], FILE *arq) {
 
     int k = 0;
     for (int i = 0; i < 4; i++) {
-        bloco[0][i] = aux[k++];
-        bloco[1][i] = aux[k++];
-        bloco[2][i] = aux[k++];
-        bloco[3][i] = aux[k++];
+        bloco[i] = aux[k++];
+        bloco[4 + i] = aux[k++];
+        bloco[8 + i] = aux[k++];
+        bloco[12 + i] = aux[k++];
     }
 
     return 1;
@@ -276,18 +278,26 @@ int main (int argc, char *argv[]) {
         exit (1) ;
     }
 
-    unsigned char bloco [4][4];
-    while (!feof (arq)) {
-        if (leBloco(bloco, arq)) {
-            cifraBloco(bloco);
+    // unsigned char bloco [16];
+    // while (!feof (arq)) {
+    //     if (leBloco(bloco, arq)) {
+    //         cifraBloco(bloco);
             
-            for (int i = 0; i < 4; i++)
-            {
-                for (int j = 0; j < 4; j++)
-                    printf("%c", bloco[j][i]);        
-            }
-        }
+    //         for (int i = 0; i < 4; i++)
+    //         {
+    //             for (int j = 0; j < 4; j++)
+    //                 printf("%c", bloco[(j * 4) + i]);        
+    //         }
+    //     }
+    // }
+
+    for (int i = 0; i < 40; i++)
+    {
+        for (int j = 0; j < 4; j++)
+            printf("%02x", chaveExpandida[(j * 4) + i]);        
     }
+    printf("\n");
+
 
     fclose (arq);
     return 0;
