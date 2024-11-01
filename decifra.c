@@ -280,25 +280,18 @@ int main (int argc, char *argv[]) {
         exit (1) ;
     }
 
-    // unsigned char bloco [4][4];
-    // while (!feof (arq)) {
-    //     if (leBloco(bloco, arq)) {
-    //         decifraBloco(bloco);
+    unsigned char bloco [4][4];
+    while (!feof (arq)) {
+        if (leBloco(bloco, arq)) {
+            decifraBloco(bloco);
             
-    //         for (int i = 0; i < 4; i++)
-    //         {
-    //             for (int j = 0; j < 4; j++)
-    //                 printf("%c", bloco[j][i]);        
-    //         }
-    //     }
-    // }
-
-    for (int i = 0; i < 40; i++)
-    {
-        for (int j = 0; j < 4; j++)
-            printf("%02x", chaveExpandida[j][i]);        
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                    printf("%c", bloco[j][i]);        
+            }
+        }
     }
-    printf("\n");
 
     fclose (arq);
     return 0;

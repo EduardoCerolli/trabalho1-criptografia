@@ -30,10 +30,10 @@ unsigned char chaveExpandida[160];
 // XOR entre o bloco atual e chave de rodada
 void adicionaChave (unsigned char bloco[16], unsigned char chave[160], int rodada) {
     for (int i = 0; i < 4; i++) {
-        bloco[(i * 4) + 0] = bloco[(i * 4) + 0] ^ chave[(i * 4) + rodada + 0];
-        bloco[(i * 4) + 1] = bloco[(i * 4) + 1] ^ chave[(i * 4) + rodada + 1];
-        bloco[(i * 4) + 2] = bloco[(i * 4) + 2] ^ chave[(i * 4) + rodada + 2];
-        bloco[(i * 4) + 3] = bloco[(i * 4) + 3] ^ chave[(i * 4) + rodada + 3];
+        bloco[(i * 4) + 0] = bloco[(i * 4) + 0] ^ chave[(i * 40) + rodada + 0];
+        bloco[(i * 4) + 1] = bloco[(i * 4) + 1] ^ chave[(i * 40) + rodada + 1];
+        bloco[(i * 4) + 2] = bloco[(i * 4) + 2] ^ chave[(i * 40) + rodada + 2];
+        bloco[(i * 4) + 3] = bloco[(i * 4) + 3] ^ chave[(i * 40) + rodada + 3];
     }
 
     return;
@@ -125,50 +125,50 @@ void expandeChave () {
     unsigned char aux[4];
     int rodada = 0;
     
-    funcaoG(aux, chave[3], chave[4 + 3], chave[8 + 3], chave[12 + 3], 0);
-    chaveExpandida[0] = aux[0] ^ chave[0];
-    chaveExpandida[4] = aux[1] ^ chave[4];
-    chaveExpandida[8] = aux[2] ^ chave[8];
-    chaveExpandida[12] = aux[3] ^ chave[12];
+    funcaoG(aux, chave[3], chave[7], chave[11], chave[15], 0);
+    chaveExpandida[  0] = aux[0] ^ chave[0];
+    chaveExpandida[ 40] = aux[1] ^ chave[4];
+    chaveExpandida[ 80] = aux[2] ^ chave[8];
+    chaveExpandida[120] = aux[3] ^ chave[12];
 
-    chaveExpandida[1] = chaveExpandida[0] ^ chave[1];
-    chaveExpandida[4 + 1] = chaveExpandida[4] ^ chave[4 + 1];
-    chaveExpandida[8 + 1] = chaveExpandida[8] ^ chave[8 + 1];
-    chaveExpandida[12 + 1] = chaveExpandida[12] ^ chave[12 + 1];
+    chaveExpandida[  1] = chaveExpandida[  0] ^ chave[1];
+    chaveExpandida[ 41] = chaveExpandida[ 40] ^ chave[5];
+    chaveExpandida[ 81] = chaveExpandida[ 80] ^ chave[9];
+    chaveExpandida[121] = chaveExpandida[120] ^ chave[13];
 
-    chaveExpandida[2] = chaveExpandida[1] ^ chave[2];
-    chaveExpandida[4 + 2] = chaveExpandida[4 + 1] ^ chave[4 + 2];
-    chaveExpandida[8 + 2] = chaveExpandida[8 + 1] ^ chave[8 + 2];
-    chaveExpandida[12 + 2] = chaveExpandida[12 + 1] ^ chave[12 + 2];
+    chaveExpandida[  2] = chaveExpandida[  1] ^ chave[2];
+    chaveExpandida[ 42] = chaveExpandida[ 41] ^ chave[6];
+    chaveExpandida[ 82] = chaveExpandida[ 81] ^ chave[10];
+    chaveExpandida[122] = chaveExpandida[121] ^ chave[14];
 
-    chaveExpandida[3] = chaveExpandida[2] ^ chave[3];
-    chaveExpandida[4 + 3] = chaveExpandida[4 + 2] ^ chave[4 + 3];
-    chaveExpandida[8 + 3] = chaveExpandida[8 + 2] ^ chave[8 + 3];
-    chaveExpandida[12 + 3] = chaveExpandida[12 + 2] ^ chave[12 + 3];
-    
+    chaveExpandida[  3] = chaveExpandida[  2] ^ chave[3];
+    chaveExpandida[ 43] = chaveExpandida[ 42] ^ chave[7];
+    chaveExpandida[ 83] = chaveExpandida[ 82] ^ chave[11];
+    chaveExpandida[123] = chaveExpandida[122] ^ chave[15];
+
     for (int i = 4; i < 40; i+= 4)
     {
         rodada++;
-        funcaoG(aux, chaveExpandida[i - 1], chaveExpandida[4 + i - 1], chaveExpandida[8 +  i - 1], chaveExpandida[12 + i - 1], rodada);
-        chaveExpandida[i] = aux[0] ^ chaveExpandida[i - 4];
-        chaveExpandida[4 + i] = aux[1] ^ chaveExpandida[4 + i - 4];
-        chaveExpandida[8 +  i] = aux[2] ^ chaveExpandida[8 +  i - 4];
-        chaveExpandida[12 + i] = aux[3] ^ chaveExpandida[12 + i - 4];
+        funcaoG(aux, chaveExpandida[i - 1], chaveExpandida[40 + i - 1], chaveExpandida[80 +  i - 1], chaveExpandida[120 + i - 1], rodada);
+        chaveExpandida[      i] = aux[0] ^ chaveExpandida[      i - 4];
+        chaveExpandida[ 40 + i] = aux[1] ^ chaveExpandida[ 40 + i - 4];
+        chaveExpandida[ 80 + i] = aux[2] ^ chaveExpandida[ 80 + i - 4];
+        chaveExpandida[120 + i] = aux[3] ^ chaveExpandida[120 + i - 4];
 
-        chaveExpandida[i + 1] = chaveExpandida[i + 1 - 1] ^ chaveExpandida[i + 1 - 4];
-        chaveExpandida[4 + i + 1] = chaveExpandida[4 + i + 1 - 1] ^ chaveExpandida[4 + i + 1 - 4];
-        chaveExpandida[8 +  i + 1] = chaveExpandida[8 +  i + 1 - 1] ^ chaveExpandida[8 +  i + 1 - 4];
-        chaveExpandida[12 + i + 1] = chaveExpandida[12 + i + 1 - 1] ^ chaveExpandida[12 + i + 1 - 4];
+        chaveExpandida[      i + 1] = chaveExpandida[      i + 1 - 1] ^ chaveExpandida[      i + 1 - 4];
+        chaveExpandida[ 40 + i + 1] = chaveExpandida[ 40 + i + 1 - 1] ^ chaveExpandida[ 40 + i + 1 - 4];
+        chaveExpandida[ 80 + i + 1] = chaveExpandida[ 80 + i + 1 - 1] ^ chaveExpandida[ 80 + i + 1 - 4];
+        chaveExpandida[120 + i + 1] = chaveExpandida[120 + i + 1 - 1] ^ chaveExpandida[120 + i + 1 - 4];
 
-        chaveExpandida[i + 2] = chaveExpandida[i + 2 - 1] ^ chaveExpandida[i + 2 - 4];
-        chaveExpandida[4 + i + 2] = chaveExpandida[4 + i + 2 - 1] ^ chaveExpandida[4 + i + 2 - 4];
-        chaveExpandida[8 +  i + 2] = chaveExpandida[8 +  i + 2 - 1] ^ chaveExpandida[8 +  i + 2 - 4];
-        chaveExpandida[12 + i + 2] = chaveExpandida[12 + i + 2 - 1] ^ chaveExpandida[12 + i + 2 - 4];
+        chaveExpandida[      i + 2] = chaveExpandida[      i + 2 - 1] ^ chaveExpandida[      i + 2 - 4];
+        chaveExpandida[ 40 + i + 2] = chaveExpandida[ 40 + i + 2 - 1] ^ chaveExpandida[ 40 + i + 2 - 4];
+        chaveExpandida[ 80 + i + 2] = chaveExpandida[ 80 + i + 2 - 1] ^ chaveExpandida[ 80 + i + 2 - 4];
+        chaveExpandida[120 + i + 2] = chaveExpandida[120 + i + 2 - 1] ^ chaveExpandida[120 + i + 2 - 4];
 
-        chaveExpandida[i + 3] = chaveExpandida[i + 3 - 1] ^ chaveExpandida[i + 3 - 4];
-        chaveExpandida[4 + i + 3] = chaveExpandida[4 + i + 3 - 1] ^ chaveExpandida[4 + i + 3 - 4];
-        chaveExpandida[8 +  i + 3] = chaveExpandida[8 +  i + 3 - 1] ^ chaveExpandida[8 +  i + 3 - 4];
-        chaveExpandida[12 + i + 3] = chaveExpandida[12 + i + 3 - 1] ^ chaveExpandida[12 + i + 3 - 4];
+        chaveExpandida[      i + 3] = chaveExpandida[      i + 3 - 1] ^ chaveExpandida[      i + 3 - 4];
+        chaveExpandida[ 40 + i + 3] = chaveExpandida[ 40 + i + 3 - 1] ^ chaveExpandida[ 40 + i + 3 - 4];
+        chaveExpandida[ 80 + i + 3] = chaveExpandida[ 80 + i + 3 - 1] ^ chaveExpandida[ 80 + i + 3 - 4];
+        chaveExpandida[120 + i + 3] = chaveExpandida[120 + i + 3 - 1] ^ chaveExpandida[120 + i + 3 - 4];
     }
     
 
@@ -278,26 +278,18 @@ int main (int argc, char *argv[]) {
         exit (1) ;
     }
 
-    // unsigned char bloco [16];
-    // while (!feof (arq)) {
-    //     if (leBloco(bloco, arq)) {
-    //         cifraBloco(bloco);
+    unsigned char bloco [16];
+    while (!feof (arq)) {
+        if (leBloco(bloco, arq)) {
+            cifraBloco(bloco);
             
-    //         for (int i = 0; i < 4; i++)
-    //         {
-    //             for (int j = 0; j < 4; j++)
-    //                 printf("%c", bloco[(j * 4) + i]);        
-    //         }
-    //     }
-    // }
-
-    for (int i = 0; i < 40; i++)
-    {
-        for (int j = 0; j < 4; j++)
-            printf("%02x", chaveExpandida[(j * 4) + i]);        
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                    printf("%c", bloco[(j * 4) + i]);        
+            }
+        }
     }
-    printf("\n");
-
 
     fclose (arq);
     return 0;
