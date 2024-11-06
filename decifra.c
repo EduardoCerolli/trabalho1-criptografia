@@ -31,12 +31,12 @@ unsigned char chaveExpandida[4][40];
 
 
 // XOR entre o bloco atual e chave de rodada
-void adicionaChave (unsigned char bloco[4][4], unsigned char chave[4][40], int rodada) {
+void adicionaChave (unsigned char bloco[4][4], int rodada) {
     for (int i = 0; i < 4; i++) {
-        bloco[i][0] = bloco[i][0] ^ chave[i][rodada + 0];
-        bloco[i][1] = bloco[i][1] ^ chave[i][rodada + 1];
-        bloco[i][2] = bloco[i][2] ^ chave[i][rodada + 2];
-        bloco[i][3] = bloco[i][3] ^ chave[i][rodada + 3];
+        bloco[i][0] = bloco[i][0] ^ chaveExpandida[i][rodada + 0];
+        bloco[i][1] = bloco[i][1] ^ chaveExpandida[i][rodada + 1];
+        bloco[i][2] = bloco[i][2] ^ chaveExpandida[i][rodada + 2];
+        bloco[i][3] = bloco[i][3] ^ chaveExpandida[i][rodada + 3];
     }
 
     return;
@@ -49,6 +49,17 @@ void substituiBytes(unsigned char bloco[4][4]) {
         bloco[i][2] = caixaSInv[bloco[i][2]];
         bloco[i][3] = caixaSInv[bloco[i][3]];
     }
+}
+
+void viginere(unsigned char bloco[4][4]) {
+    for (int i = 0; i < 4; i++) {
+        bloco[i][0] = (bloco[i][0] - chave[i][0] + 256) % 256;
+        bloco[i][1] = (bloco[i][1] - chave[i][1] + 256) % 256;
+        bloco[i][2] = (bloco[i][2] - chave[i][2] + 256) % 256;
+        bloco[i][3] = (bloco[i][3] - chave[i][3] + 256) % 256;
+    }
+
+    return;
 }
 
 void rotacionaLinhas (unsigned char bloco[4][4]) {
@@ -177,18 +188,17 @@ void expandeChave () {
 }
 
 void decifraBloco (unsigned char bloco [4][4]) {
-
-    adicionaChave(bloco, chaveExpandida, 9 * 4);
+    adicionaChave(bloco, 36);
 
     for (int i = 8; i >= 0; i--) {
         rotacionaLinhas(bloco);
-        substituiBytes(bloco);
-        adicionaChave(bloco, chaveExpandida, i * 4);
+        viginere(bloco);
+        adicionaChave(bloco, i * 4);
         multiplicaColunas(bloco);
     }
     
     rotacionaLinhas(bloco);
-    substituiBytes(bloco);
+    viginere(bloco);
     for (int i = 0; i < 4; i++) {
         bloco[i][0] = bloco[i][0] ^ chave[i][0];
         bloco[i][1] = bloco[i][1] ^ chave[i][1];

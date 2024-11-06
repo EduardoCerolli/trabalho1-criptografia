@@ -28,12 +28,12 @@ unsigned char chaveExpandida[160];
 
 
 // XOR entre o bloco atual e chave de rodada
-void adicionaChave (unsigned char bloco[16], unsigned char chave[160], int rodada) {
+void adicionaChave (unsigned char bloco[16], int rodada) {
     for (int i = 0; i < 4; i++) {
-        bloco[(i * 4) + 0] = bloco[(i * 4) + 0] ^ chave[(i * 40) + rodada + 0];
-        bloco[(i * 4) + 1] = bloco[(i * 4) + 1] ^ chave[(i * 40) + rodada + 1];
-        bloco[(i * 4) + 2] = bloco[(i * 4) + 2] ^ chave[(i * 40) + rodada + 2];
-        bloco[(i * 4) + 3] = bloco[(i * 4) + 3] ^ chave[(i * 40) + rodada + 3];
+        bloco[(i * 4) + 0] = bloco[(i * 4) + 0] ^ chaveExpandida[(i * 40) + rodada + 0];
+        bloco[(i * 4) + 1] = bloco[(i * 4) + 1] ^ chaveExpandida[(i * 40) + rodada + 1];
+        bloco[(i * 4) + 2] = bloco[(i * 4) + 2] ^ chaveExpandida[(i * 40) + rodada + 2];
+        bloco[(i * 4) + 3] = bloco[(i * 4) + 3] ^ chaveExpandida[(i * 40) + rodada + 3];
     }
 
     return;
@@ -46,6 +46,17 @@ void substituiBytes(unsigned char bloco[16]) {
         bloco[(i * 4) + 2] = caixaS[bloco[(i * 4) + 2]];
         bloco[(i * 4) + 3] = caixaS[bloco[(i * 4) + 3]];
     }
+}
+
+void viginere(unsigned char bloco[16]) {
+    for (int i = 0; i < 4; i++) {
+        bloco[(i * 4) + 0] = (bloco[(i * 4) + 0] + chave[(i * 4) + 0]) % 256;
+        bloco[(i * 4) + 1] = (bloco[(i * 4) + 1] + chave[(i * 4) + 1]) % 256;
+        bloco[(i * 4) + 2] = (bloco[(i * 4) + 2] + chave[(i * 4) + 2]) % 256;
+        bloco[(i * 4) + 3] = (bloco[(i * 4) + 3] + chave[(i * 4) + 3]) % 256;
+    }
+
+    return;
 }
 
 void rotacionaLinhas (unsigned char bloco[16]) {
@@ -185,14 +196,14 @@ void cifraBloco (unsigned char bloco [16]) {
     }
 
     for (int i = 0; i < 9; i++) {
-        substituiBytes(bloco);
+        viginere(bloco);
         rotacionaLinhas(bloco);
         multiplicaColunas(bloco);
-        adicionaChave(bloco, chaveExpandida, i * 4);
+        adicionaChave(bloco, i * 4);
     }
-    substituiBytes(bloco);
+    viginere(bloco);
     rotacionaLinhas(bloco);
-    adicionaChave(bloco, chaveExpandida, 9 * 4);
+    adicionaChave(bloco, 36);
     
     return;
 }
