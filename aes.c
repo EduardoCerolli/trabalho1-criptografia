@@ -211,29 +211,20 @@ void cifraBloco (unsigned char bloco [16]) {
 void preencheChave(char *senha) {
     unsigned char aux[17];
 
-    if (senha == NULL) {
-        printf("Digite a senha.\n");
-        int res = scanf ("%16s", aux);
-        if (res == 0) {
-            perror ("Erro ao ler chave") ;
-            exit (1) ;
-        }
+    FILE *arq;
+    arq = fopen(senha, "r");
+    if (!arq) {
+        perror ("Erro ao abrir arquivo de senha") ;
+        exit (1) ;
     }
-    else {
-        FILE *arq;
-        arq = fopen(senha, "r");
-        if (!arq) {
-            perror ("Erro ao abrir arquivo") ;
-            exit (1) ;
-        }
-        int tam = fread(aux, 1, 16, arq);
-        if (tam != 16) {
-            perror ("Erro ao ler chave") ;
-            exit (1) ;
-        }
 
-        fclose (arq);
+    int tam = fread(aux, 1, 16, arq);
+    if (tam != 16) {
+        perror ("Chave invalida") ;
+        exit (1) ;
     }
+
+    fclose (arq);
 
     int k = 0;
     for (int i = 0; i < 4; i++) {
@@ -268,24 +259,30 @@ int leBloco (unsigned char bloco [16], FILE *arq) {
 }
 
 int main (int argc, char *argv[]) {
-    char *dados, *senha = NULL;
+    char *dados, *senha, *saida;
 
-    if (argc < 2) {
+    if (argc < 4) {
         printf("Informe o arquivo de dados.\n");
         return 1;
     }
-    else if (argc > 2) {
-        senha = argv[2];
-    }
     
     dados = argv[1];
+    senha = argv[2];
+    saida = argv[3];
 
     preencheChave(senha);
 
     FILE *arq;
     arq = fopen(dados, "r");
     if (!arq) {
-        perror ("Erro ao abrir arquivo") ;
+        perror ("Erro ao abrir arquivo de dados") ;
+        exit (1) ;
+    }
+
+    FILE *arqSaida;
+    arqSaida = fopen(saida, "w");
+    if (!arqSaida) {
+        perror ("Erro ao abrir arquivo de saida") ;
         exit (1) ;
     }
 
@@ -297,7 +294,7 @@ int main (int argc, char *argv[]) {
             for (int i = 0; i < 4; i++)
             {
                 for (int j = 0; j < 4; j++)
-                    printf("%c", bloco[(j * 4) + i]);        
+                    fprintf(arqSaida, "%c", bloco[(j * 4) + i]);        
             }
         }
     }
